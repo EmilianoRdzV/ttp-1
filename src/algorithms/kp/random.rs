@@ -12,18 +12,19 @@ pub struct RandomKP;
  * RandomKP is a simple algorithm that generates a random solution for the knapsack problem.
  */
 impl RandomKP {
-    pub fn solve(path: &Path, instance: &Instance) -> f64 {
-        let mut items: Vec<(f64, f64)> = vec![];
+    pub fn solve(path: &Path, instance: &Instance) -> (f64, Vec<usize>) {
+        let mut items: Vec<(usize, f64, f64)> = vec![];
         for item in instance.items.iter() {
             // Check if the node is in the path
             if path.has_node(item.3 as i32) {
-                items.push((item.1, item.2));
+                items.push((item.0, item.1, item.2));
             }
         }
 
         let max_capacity = instance.capacity_of_knapsack;
         let mut current_weight: f64 = 0.0;
         let mut current_profit: f64 = 0.0;
+        let mut selected_items: Vec<usize> = Vec::new();
 
         // Generate a random solution
         // Randomly select items to put in the knapsack
@@ -33,7 +34,7 @@ impl RandomKP {
             // Get random item from vector and remove it
             let index = rng.gen_range(0..=(items.len() - 1));
 
-            let (weight, profit) = items[index];
+            let (id, weight, profit) = items[index];
             items.remove(index);
 
             // Check if adding the item exceeds the capacity
@@ -41,6 +42,7 @@ impl RandomKP {
                 // Add the item to the solution
                 current_weight += weight;
                 current_profit += profit;
+                selected_items.push(id);
             }
         }
 
@@ -49,6 +51,6 @@ impl RandomKP {
             current_weight, current_profit, max_capacity
         );
 
-        current_profit
+        (current_profit, selected_items)
     }
 }

@@ -102,8 +102,15 @@ fn main() {
     if let Some(shortest_path) = shortest_path {
         println!("Shortest path length: {}", shortest_path.length());
 
-        let solution = RandomKP::solve(&shortest_path, &instance);
-        println!("Profit: {}", solution);
+        let (profit, items) = RandomKP::solve(&shortest_path, &instance);
+        println!("Profit: {}", profit);
+
+        let route_ids: Vec<i32> = shortest_path.nodes.iter().map(|(id, _, _)| *id).collect();
+        let output_content = format!("{:?}\n{:?}", route_ids, items);
+
+        let output_filename = format!("{}_solution.txt", selected_file);
+        fs::write(&output_filename, output_content).expect("Failed to write solution file");
+        println!("Solution saved to {}", output_filename);
     } else {
         println!("Failed to find the shortest path");
     }
