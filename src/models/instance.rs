@@ -53,7 +53,7 @@ impl Display for Instance {
 }
 
 impl Instance {
-    pub fn load(file_path: &str) -> Option<Instance> {
+    pub fn load(file_path: &str, load_items: bool) -> Option<Instance> {
         let file = match File::open(Path::new(file_path)) {
             Ok(file) => file,
             Err(_) => return None,
@@ -91,6 +91,9 @@ impl Instance {
             }
 
             if line.starts_with("ITEMS SECTION") {
+                if !load_items {
+                    break;
+                }
                 section = "ITEMS".to_string();
                 continue;
             }

@@ -50,10 +50,18 @@ fn main() {
     println!("Selected file: {}", selected_file);
 
     // Load the selected instance
-    let instance =
-        Instance::load(&format!("./instances/{}", selected_file)).expect("Failed to load instance");
+    let mode_selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select execution mode")
+        .item("Full TTP (TSP + KP)")
+        .item("TSP Only")
+        .default(0)
+        .interact()
+        .expect("Failed to select execution mode");
 
-    println!("{}\n", instance);
+    // Load the selected instance
+    let load_items = mode_selection == 0;
+    let instance = Instance::load(&format!("./instances/{}", selected_file), load_items)
+        .expect("Failed to load instance");
 
     let algorithm_selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Select an algorithm")
@@ -102,15 +110,24 @@ fn main() {
     if let Some(shortest_path) = shortest_path {
         println!("Shortest path length: {}", shortest_path.length());
 
-        let (profit, items) = RandomKP::solve(&shortest_path, &instance);
-        println!("Profit: {}", profit);
+        if mode_selection == 0 {
+            let (profit, items) = RandomKP::solve(&shortest_path, &instance);
+            println!("Profit: {}", profit);
+
+            let route_ids: Vec<i32> = shortest_path.nodes.iter().map(|(id, _, _)| *id).collect();
+            let output_content = format!("{:?}\n{:?}", route_ids, items);
+
+            let output_filename = format!("{}_solution.txt", selected_file);
+            fs::write(&output_filename, output_content).expect("Failed to write solution file");
+            println!("Solution saved to {}", output_filename);
+        }
 
         let route_ids: Vec<i32> = shortest_path.nodes.iter().map(|(id, _, _)| *id).collect();
-        let output_content = format!("{:?}\n{:?}", route_ids, items);
-
-        let output_filename = format!("{}_solution.txt", selected_file);
-        fs::write(&output_filename, output_content).expect("Failed to write solution file");
-        println!("Solution saved to {}", output_filename);
+        let tsp_output_content = format!("{:?}", route_ids);
+        let tsp_output_filename = format!("{}_tsp_route.txt", selected_file);
+        fs::write(&tsp_output_filename, tsp_output_content)
+            .expect("Failed to write TSP route file");
+        println!("TSP route saved to {}", tsp_output_filename);
     } else {
         println!("Failed to find the shortest path");
     }
