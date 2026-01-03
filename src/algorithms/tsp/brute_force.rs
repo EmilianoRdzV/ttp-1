@@ -7,7 +7,11 @@ use crate::models::path::Path;
 pub struct BruteForceTSP;
 
 // Helper function to generate all the possible permutations of the nodes.
-fn permute(nodes: &mut Vec<(i32, i32, i32)>, start: usize, result: &mut Vec<Vec<(i32, i32, i32)>>) {
+fn permute(
+    nodes: &mut Vec<(usize, f64, f64)>,
+    start: usize,
+    result: &mut Vec<Vec<(usize, f64, f64)>>,
+) {
     if start == nodes.len() {
         result.push(nodes.clone());
     } else {
@@ -29,7 +33,7 @@ impl BruteForceTSP {
         let mut best_path = path.clone();
         let mut best_length = path.length();
 
-        let mut all_permutations: Vec<Vec<(i32, i32, i32)>> = Vec::new();
+        let mut all_permutations: Vec<Vec<(usize, f64, f64)>> = Vec::new();
         permute(&mut path.nodes, 0, &mut all_permutations);
 
         for perm in all_permutations {

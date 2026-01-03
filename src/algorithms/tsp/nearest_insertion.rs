@@ -30,8 +30,8 @@ impl NearestInsertionTSP {
     }
 
     fn find_nearest_insertion(
-        visited: &Vec<(i32, i32, i32)>,
-        unvisited: &Vec<(i32, i32, i32)>,
+        visited: &Vec<(usize, f64, f64)>,
+        unvisited: &Vec<(usize, f64, f64)>,
     ) -> (usize, f64) {
         let mut best_insert_index = 0;
         let mut best_insert_cost = f64::INFINITY;
@@ -53,9 +53,9 @@ impl NearestInsertionTSP {
     }
 
     fn calculate_insertion_cost(
-        prev_node: &(i32, i32, i32),
-        next_node: &(i32, i32, i32),
-        new_node: &(i32, i32, i32),
+        prev_node: &(usize, f64, f64),
+        next_node: &(usize, f64, f64),
+        new_node: &(usize, f64, f64),
     ) -> f64 {
         let dist_prev_to_new = NearestInsertionTSP::distance(prev_node, new_node);
         let dist_new_to_next = NearestInsertionTSP::distance(new_node, next_node);
@@ -63,11 +63,11 @@ impl NearestInsertionTSP {
         dist_prev_to_new + dist_new_to_next - dist_prev_to_next
     }
 
-    fn distance(node1: &(i32, i32, i32), node2: &(i32, i32, i32)) -> f64 {
+    fn distance(node1: &(usize, f64, f64), node2: &(usize, f64, f64)) -> f64 {
         let (_, x1, y1) = node1;
         let (_, x2, y2) = node2;
         let dx = x2 - x1;
         let dy = y2 - y1;
-        ((dx * dx + dy * dy) as f64).sqrt()
+        (dx * dx + dy * dy).sqrt()
     }
 }

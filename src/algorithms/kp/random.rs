@@ -16,7 +16,7 @@ impl RandomKP {
         let mut items: Vec<(f64, f64)> = vec![];
         for item in instance.items.iter() {
             // Check if the node is in the path
-            if path.has_node(item.3 as i32) {
+            if path.has_node(item.3) {
                 items.push((item.1, item.2));
             }
         }

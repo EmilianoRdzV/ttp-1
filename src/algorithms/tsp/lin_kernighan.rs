@@ -46,10 +46,10 @@ impl LinKernighanTSP {
 
     fn calculate_gain(path: &Path, i: usize, j: usize) -> f64 {
         let n = path.nodes.len();
-        let (x1, y1, _) = path.nodes[i];
-        let (x2, y2, _) = path.nodes[(i + 1) % n];
-        let (x3, y3, _) = path.nodes[j];
-        let (x4, y4, _) = path.nodes[(j + 1) % n];
+        let (_, x1, y1) = path.nodes[i];
+        let (_, x2, y2) = path.nodes[(i + 1) % n];
+        let (_, x3, y3) = path.nodes[j];
+        let (_, x4, y4) = path.nodes[(j + 1) % n];
 
         let d1 = LinKernighanTSP::distance(x1, y1, x2, y2);
         let d2 = LinKernighanTSP::distance(x3, y3, x4, y4);
@@ -83,10 +83,10 @@ impl LinKernighanTSP {
         *path = Path::new(new_nodes);
     }
 
-    fn distance(x1: i32, y1: i32, x2: i32, y2: i32) -> f64 {
+    fn distance(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
         let dx = x2 - x1;
         let dy = y2 - y1;
-        let distance = ((dx * dx + dy * dy) as f64).sqrt();
+        let distance = (dx * dx + dy * dy).sqrt();
         distance
     }
 }
