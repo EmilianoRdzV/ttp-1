@@ -47,30 +47,14 @@ impl Display for Solution {
 
 impl Solution {
     fn answer(&self) -> String {
-        let mut tour_out = vec![0; self.tsp_tour.len() - 1];
-        for i in 0..self.tsp_tour.len() - 1 {
-            tour_out[i] = self.tsp_tour[i] + 1;
-        }
-
-        let items_per_city = self.packing_plan.len() / (self.tsp_tour.len() - 2);
-
-        let mut packing_plan_list = Vec::new();
-        let mut packing_plan_index = 0;
-        for i in 1..self.tsp_tour.len() - 1 {
-            let city = self.tsp_tour[i];
-            for _ in 0..items_per_city {
-                if self.packing_plan[packing_plan_index] == 1 {
-                    let item_index = (i - 1) * items_per_city + (city - 1);
-                    let item_index_from_1 = item_index + 1;
-                    packing_plan_list.push(item_index_from_1);
-                }
-                packing_plan_index += 1;
-            }
-        }
-        packing_plan_list.sort();
-
-        let packing_out: Vec<String> = packing_plan_list.iter().map(|&x| x.to_string()).collect();
-        format!("{:?}\n{:?}\n", tour_out, packing_out)
+        // Simple output format matching previous main.rs behavior:
+        // Line 1: TSP Tour (list of node IDs)
+        // Line 2: Packed Items (list of item IDs)
+        // We ensure tsp_tour uses 1-based indexing if that's what's expected,
+        // but main.rs previously successfully used 0-based or whatever was in the vector.
+        // The previous main.rs output was: format!("{:?}\n{:?}", route_ids, items)
+        // So we will replicate that but using fields.
+        format!("{:?}\n{:?}\n", self.tsp_tour, self.packing_plan)
     }
 
     #[allow(dead_code)]

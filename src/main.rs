@@ -11,7 +11,7 @@ use crate::{
             tabu_search::TabuSearchTSB, two_opt::TwoOpt,
         },
     },
-    models::{instance::Instance, path::Path},
+    models::{instance::Instance, path::Path, solution::Solution},
 };
 use dialoguer::{theme::ColorfulTheme, Select};
 use std::fs;
@@ -20,7 +20,6 @@ mod algorithms;
 mod models;
 
 fn main() {
-    
     // List all the files in the instances folder
     let files = fs::read_dir("./instances")
         .expect("Failed to read instances folder")
@@ -112,14 +111,10 @@ fn main() {
         println!("Shortest path length: {}", shortest_path.length());
 
         if mode_selection == 0 {
-            let (profit, items) = RandomKP::solve(&shortest_path, &instance);
-            println!("Profit: {}", profit);
-
-            let route_ids: Vec<i32> = shortest_path.nodes.iter().map(|(id, _, _)| *id).collect();
-            let output_content = format!("{:?}\n{:?}", route_ids, items);
+            let solution = RandomKP::solve(&shortest_path, &instance);
 
             let output_filename = format!("{}_solution.txt", selected_file);
-            fs::write(&output_filename, output_content).expect("Failed to write solution file");
+            solution.write_result(&output_filename);
             println!("Solution saved to {}", output_filename);
         }
 
