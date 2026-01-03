@@ -12,43 +12,55 @@ pub struct RandomKP;
  * RandomKP is a simple algorithm that generates a random solution for the knapsack problem.
  */
 impl RandomKP {
-    pub fn solve(path: &Path, instance: &Instance) -> f64 {
-        let mut items: Vec<(f64, f64)> = vec![];
-        for item in instance.items.iter() {
+    pub fn solve(path: &Path, instance: &Instance) -> Vec<usize> {
+        // Collect available items with their original 0-based index
+        // Instance items are (id, profit, weight, node_id)
+        // We assume we can map 1:1 if we just track the index in the instance.items vector
+        // item 0 in instance.items -> index 0 for packing plan
+
+        let mut available_items: Vec<(usize, f64, f64)> = vec![];
+        for (idx, item) in instance.items.iter().enumerate() {
             // Check if the node is in the path
+            // item.3 is the assigned node ID
             if path.has_node(item.3) {
-                items.push((item.1, item.2));
+                available_items.push((idx, item.1, item.2));
             }
         }
 
         let max_capacity = instance.capacity_of_knapsack;
         let mut current_weight: f64 = 0.0;
-        let mut current_profit: f64 = 0.0;
+        let mut packing_plan = vec![0; instance.num_items];
+        let mut _current_profit: f64 = 0.0; // Keep track just for debugging/logging if needed
 
         // Generate a random solution
-        // Randomly select items to put in the knapsack
         let mut rng = thread_rng();
-        for _ in 0..items.len() {
-            // Randomly select an item
-            // Get random item from vector and remove it
-            let index = rng.gen_range(0..=(items.len() - 1));
 
-            let (weight, profit) = items[index];
-            items.remove(index);
+        // Shuffle available items to pick randomly without remove overhead or repeated gen_range logic
+        // Or just pick loops. The previous logic was: iteratively pick random from remaining.
 
-            // Check if adding the item exceeds the capacity
+        while !available_items.is_empty() {
+            let index_in_available = rng.gen_range(0..available_items.len());
+            let (original_idx, profit, weight) = available_items[index_in_available];
+
+            // Remove from available so we don't pick again
+            available_items.swap_remove(index_in_available);
+
             if current_weight + weight <= max_capacity {
-                // Add the item to the solution
                 current_weight += weight;
-                current_profit += profit;
+                _current_profit += profit;
+
+                // Mark as picked
+                if original_idx < packing_plan.len() {
+                    packing_plan[original_idx] = 1;
+                }
             }
         }
 
-        println!(
-            "Current capacity: {} Current profit: {} Max capacity: {}",
-            current_weight, current_profit, max_capacity
-        );
+        // println!(
+        //    "RandomKP -> Weight: {}, Profit: {}",
+        //    current_weight, _current_profit
+        // );
 
-        current_profit
+        packing_plan
     }
 }
