@@ -21,16 +21,16 @@ impl Path {
         for i in 0..(self.nodes.len() - 1) {
             let (_, x1, y1) = self.nodes[i];
             let (_, x2, y2) = self.nodes[i + 1];
-            let dx = x2 - x1;
-            let dy = y2 - y1;
-            len += ((dx * dx + dy * dy) as f64).sqrt();
+            let dx = (x2 - x1) as f64;
+            let dy = (y2 - y1) as f64;
+            len += (dx * dx + dy * dy).sqrt();
         }
 
         let (_, x1, y1) = self.nodes[self.nodes.len() - 1];
         let (_, x2, y2) = self.nodes[0];
-        let dx = x2 - x1;
-        let dy = y2 - y1;
-        len += ((dx * dx + dy * dy) as f64).sqrt();
+        let dx = (x2 - x1) as f64;
+        let dy = (y2 - y1) as f64;
+        len += (dx * dx + dy * dy).sqrt();
         len
     }
 }

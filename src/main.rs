@@ -20,6 +20,7 @@ mod algorithms;
 mod models;
 
 fn main() {
+    
     // List all the files in the instances folder
     let files = fs::read_dir("./instances")
         .expect("Failed to read instances folder")
