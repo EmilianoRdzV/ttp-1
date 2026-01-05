@@ -9,19 +9,17 @@ use crate::models::instance::Instance;
 pub struct GreedyKP;
 
 impl GreedyKP {
-    pub fn solve(instance: &Instance) -> Vec<usize> {
+    pub fn solve(instance: &Instance, _tour: &Vec<usize>) -> Vec<usize> {
         let capacity = instance.capacity_of_knapsack;
         let mut current_weight = 0.0;
         let mut packing_plan = vec![0; instance.num_items];
 
-        // Create a list of items with their efficiency: (index, weight, profit, efficiency)
-        // instance.items: (index, profit, weight, assigned_node)
-        // We want to sort by Profit/Weight descending.
+        // Simple Greedy: Profit / Weight
+        // We ignore the tour for the initial plan (as per user's Python script success).
 
         struct ItemData {
             idx: usize,
             weight: f64,
-            _profit: f64,
             efficiency: f64,
         }
 
@@ -40,21 +38,34 @@ impl GreedyKP {
                 ItemData {
                     idx: i,
                     weight,
-                    _profit: profit,
                     efficiency,
                 }
             })
             .collect();
 
-        // Sort descending by efficiency
+        // Sort descending by EFFICIENCY
         items.sort_by(|a, b| b.efficiency.partial_cmp(&a.efficiency).unwrap());
 
         for item in items {
+            // Fill as much as possible
             if current_weight + item.weight <= capacity {
                 current_weight += item.weight;
                 packing_plan[item.idx] = 1;
             }
         }
+
+        let picked_count = packing_plan.iter().filter(|&&x| x == 1).count();
+        println!("DEBUG: GreedyKP finished.");
+        println!(
+            "DEBUG: Capacity: {:.2}, Used Weight: {:.2} ({:.2}%)",
+            capacity,
+            current_weight,
+            (current_weight / capacity) * 100.0
+        );
+        println!(
+            "DEBUG: Items picked: {} / {}",
+            picked_count, instance.num_items
+        );
 
         packing_plan
     }

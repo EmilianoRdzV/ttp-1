@@ -48,7 +48,19 @@ impl Display for Solution {
 impl Solution {
     fn answer(&self) -> String {
         // Convert 0-based tour to 1-based for output
-        let tour_out: Vec<usize> = self.tsp_tour.iter().map(|&x| x + 1).collect();
+        let mut tour_out: Vec<usize> = self.tsp_tour.iter().map(|&x| x + 1).collect();
+
+        // GECCO Requirement: First city must be "1".
+        // Find position of 1 and rotate.
+        if let Some(pos_1) = tour_out.iter().position(|&x| x == 1) {
+            tour_out.rotate_left(pos_1);
+        }
+
+        // Ensure we don't print "1" at the end if it exists (though usually it's just a permutation).
+        // If the tour was closed [1, 2, ..., 1], remove the last one.
+        if tour_out.len() > 1 && tour_out.last() == Some(&1) {
+            tour_out.pop();
+        }
 
         // Convert binary packing plan to list of picked item indices (1-based)
         let mut packing_plan_list = Vec::new();
@@ -59,8 +71,28 @@ impl Solution {
         }
         // packing_plan_list is already sorted if we iterate enumerate in order
 
-        // Format as requested: arrays
-        format!("{:?}\n{:?}\n", tour_out, packing_plan_list)
+        // Format as requested: arrays with comma-separated values in square brackets.
+        // Rust default {:?} adds spaces: [1, 2, 3].
+        // We will generate the string manually to match strictly [1,2,3].
+
+        let tour_str = format!(
+            "[{}]",
+            tour_out
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<String>>()
+                .join(",")
+        );
+        let pack_str = format!(
+            "[{}]",
+            packing_plan_list
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<String>>()
+                .join(",")
+        );
+
+        format!("{}\n{}\n", tour_str, pack_str)
     }
 
     #[allow(dead_code)]
@@ -108,6 +140,12 @@ impl Solution {
         let min_speed = instance.min_speed;
         let capacity = instance.capacity_of_knapsack;
         let renting_ratio = instance.renting_ratio;
+
+        // DEBUG: Verify EDGE_WEIGHT_TYPE visibility
+        // println!("DEBUG: Eval Type: '{}'", instance.edge_weight_type);
+        if instance.edge_weight_type.eq_ignore_ascii_case("CEIL_2D") {
+            // println!("DEBUG: Using CEIL_2D logic");
+        }
 
         let mut actual_packing_plan = vec![0; instance.num_items];
         // If the input packing_plan covers all items, copy it.
@@ -161,33 +199,37 @@ impl Solution {
                             let (_id, p, w, _node) = instance.items[item_idx];
                             current_weight += w;
                             current_profit += p;
+                            // println!("DEBUG: Visited City {} -> Picked Item {} (Index {}). W: {}, P: {}. New Weight: {}", current_city + 1, id, item_idx+1, w, p, current_weight);
                         }
                     }
                 }
             }
 
             if current_weight > capacity {
-                // Invalid solution basically, but we continue or penalize?
-                // Usually represented by wend > capacity.
+                // println!("DEBUG: Overweight at City {}!", current_city + 1);
             }
 
             // 2. Travel to next city
             let dist = distance(&instance, current_city, next_city);
             let velocity = get_velocity(current_weight);
-            time += dist / velocity;
+            let travel_time = dist / velocity;
+            time += travel_time;
+
+            // println!("DEBUG: Move {} -> {}. Dist: {}, Vel: {:.5}, TimeSeg: {:.2}, TotalTime: {:.2}", current_city+1, next_city+1, dist, velocity, travel_time, time);
         }
 
         let objective = current_profit - time * renting_ratio;
+        // println!("DEBUG: Eval End. Profit: {}, Time: {}, Renting: {}, Obj: {}", current_profit, time, renting_ratio, objective);
 
         Solution {
             tsp_tour: tour.clone(),
             packing_plan: actual_packing_plan,
             fp: current_profit,
             ft: time,
-            ftraw: time, // Assuming raw time is same for now, or without stealing? Usually it's same.
+            ftraw: time,
             ob: objective,
             wend: current_weight,
-            wend_used: current_weight, // used capacity
+            wend_used: current_weight,
             computation_time: 0.0,
         }
     }
@@ -199,12 +241,17 @@ fn tuple_elem(items: &Vec<(usize, f64, f64, usize)>, idx: usize) -> bool {
 }
 
 // Helper for distance calc
+// Helper for distance calc
 fn distance(instance: &crate::models::instance::Instance, c1: usize, c2: usize) -> f64 {
-    // instance.node_coords is Vec<(index, x, y)>
-    // finding c1 and c2. Assuming c1, c2 are 0-based INDICES into the node_coords array.
     let (_, x1, y1) = instance.node_coords[c1];
     let (_, x2, y2) = instance.node_coords[c2];
     let dx = x1 - x2;
     let dy = y1 - y2;
-    (dx * dx + dy * dy).sqrt()
+
+    // Explicitly check for CEIL_2D which is standard for a280
+    if instance.edge_weight_type.eq_ignore_ascii_case("CEIL_2D") {
+        (dx * dx + dy * dy).sqrt().ceil()
+    } else {
+        (dx * dx + dy * dy).sqrt()
+    }
 }

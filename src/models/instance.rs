@@ -128,19 +128,25 @@ impl Instance {
                 "PROBLEM NAME" => instance.problem_name = value.to_string(),
                 "KNAPSACK DATA TYPE" => instance.knapsack_data_type = value.to_string(),
                 "DIMENSION" => instance.dimension = value.parse().unwrap_or(0),
-                "NUMBER OF ITEMS" => instance.num_items = value.parse().unwrap_or(0),
+                "NUMBER OF ITEMS" => {
+                    instance.num_items = value.parse().unwrap_or(0);
+                    println!("DEBUG: Parsed NUMBER OF ITEMS: {}", instance.num_items);
+                }
                 "CAPACITY OF KNAPSACK" => {
-                    instance.capacity_of_knapsack = value.parse().unwrap_or(0.0)
+                    instance.capacity_of_knapsack = value.parse().unwrap_or(0.0);
+                    println!("DEBUG: Parsed CAPACITY: {}", instance.capacity_of_knapsack);
                 }
                 "MIN SPEED" => instance.min_speed = value.parse().unwrap_or(0.0),
                 "MAX SPEED" => instance.max_speed = value.parse().unwrap_or(0.0),
                 "RENTING RATIO" => instance.renting_ratio = value.parse().unwrap_or(0.0),
                 "EDGE_WEIGHT_TYPE" => instance.edge_weight_type = value.to_string(),
                 _ => {
-                    eprint!("Unknown key: {}", key);
+                    // eprint!("Unknown key: {}", key);
                 }
             }
         }
+        println!("DEBUG: Loaded {} items.", instance.items.len());
+        println!("DEBUG: Loaded {} nodes.", instance.node_coords.len());
 
         Some(instance)
     }

@@ -2,7 +2,9 @@
  * Copyright (c) 2024 Filippo Finke
  */
 
-use crate::{
+use dialoguer::{theme::ColorfulTheme, Select};
+use std::fs;
+use ttp::{
     algorithms::{
         kp::random::RandomKP,
         tsp::{
@@ -13,11 +15,6 @@ use crate::{
     },
     models::{instance::Instance, path::Path},
 };
-use dialoguer::{theme::ColorfulTheme, Select};
-use std::fs;
-
-mod algorithms;
-mod models;
 
 fn main() {
     // List all the files in the instances folder
@@ -113,17 +110,6 @@ fn main() {
     if let Some(shortest_path_val) = shortest_path {
         println!("TSP Base path length: {}", shortest_path_val.length());
 
-        let packing_plan: Vec<usize>;
-
-        if is_ttp_optimized {
-            println!("2. Generando Plan de Recolección (Greedy)...");
-            // Use new GreedyKP
-            packing_plan = crate::algorithms::kp::greedy::GreedyKP::solve(&instance);
-        } else {
-            // Fallback for classic TSP modes -> RandomKP as before
-            packing_plan = RandomKP::solve(&shortest_path_val, &instance);
-        }
-
         // Convert Path nodes (which are (id, x, y)) to tour (vec of 0-based indices)
         // instance.nodes IDs are 1-based usually.
         let mut tour: Vec<usize> = Vec::new();
@@ -135,28 +121,57 @@ fn main() {
             }
         }
 
-        let mut solution_tour = tour.clone();
+        let packing_plan: Vec<usize>;
 
         if is_ttp_optimized {
-            println!("3. Optimizando ruta TTP (Hill Climbing)...");
-            solution_tour = crate::algorithms::ttp::hill_climbing::HillClimbingTTP::optimize(
-                &instance,
-                solution_tour,
-                &packing_plan,
-            );
+            println!("2. Generando Plan de Recolección (Greedy Cost-Aware)...");
+            // Use new GreedyKP with tour
+            packing_plan = ttp::algorithms::kp::greedy::GreedyKP::solve(&instance, &tour);
+        } else {
+            // Fallback for classic TSP modes -> RandomKP as before
+            packing_plan = RandomKP::solve(&shortest_path_val, &instance);
         }
 
-        let solution =
-            crate::models::solution::Solution::evaluate(&instance, &solution_tour, &packing_plan);
+        let mut solution_tour = tour.clone();
+        let mut final_packing_plan = packing_plan.clone();
+
+        // CRITICAL FIX: TTP Simulation MUST start at Depot (Node 0/1).
+        // Rotate solution_tour so it starts with 0 BEFORE optimization.
+        // This ensures the optimizer works on the correct configuration.
+        if let Some(pos_0) = solution_tour.iter().position(|&x| x == 0) {
+            solution_tour.rotate_left(pos_0);
+        }
+
+        if is_ttp_optimized {
+            println!("3. Optimizando ruta TTP (Hill Climbing & Bit-Flip)...");
+            let (opt_tour, opt_packing) =
+                ttp::algorithms::ttp::hill_climbing::HillClimbingTTP::optimize_full(
+                    &instance,
+                    solution_tour,
+                    final_packing_plan,
+                );
+            solution_tour = opt_tour;
+            final_packing_plan = opt_packing;
+        }
+
+        // Rotation already done before.
+        // Ensure it stays 0-started? The optimizer logic (next step) will guarantee it.
+
+        let solution = ttp::models::solution::Solution::evaluate(
+            &instance,
+            &solution_tour,
+            &final_packing_plan,
+        );
         // println!("TTP Solution:\n{}", solution);
 
-        // Find next available file name: [instance_name]_sol_[N].txt
+        // Find next available file name: [instance_name]_[nItems]_sol_[N].txt
         let base_name = instance.problem_name.clone();
+        let n_items = instance.num_items;
         let mut counter = 1;
-        let mut file_path = format!("{}_sol_{}.txt", base_name, counter);
+        let mut file_path = format!("{}_{}_sol_{}.txt", base_name, n_items, counter);
         while std::path::Path::new(&file_path).exists() {
             counter += 1;
-            file_path = format!("{}_sol_{}.txt", base_name, counter);
+            file_path = format!("{}_{}_sol_{}.txt", base_name, n_items, counter);
         }
 
         // Write result to file
