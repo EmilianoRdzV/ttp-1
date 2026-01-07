@@ -5,13 +5,10 @@
 use dialoguer::{theme::ColorfulTheme, Select};
 use std::fs;
 use ttp::{
-    algorithms::{
-        kp::random::RandomKP,
-        tsp::{
-            brute_force::BruteForceTSP, lin_kernighan::LinKernighanTSP,
-            nearest_insertion::NearestInsertionTSP, simulated_annealing::SimulatedAnnealingTSP,
-            tabu_search::TabuSearchTSB, two_opt::TwoOpt,
-        },
+    algorithms::tsp::{
+        lin_kernighan::LinKernighanTSP, nearest_insertion::NearestInsertionTSP,
+        nearest_neighbor::NearestNeighborTSP, simulated_annealing::SimulatedAnnealingTSP,
+        tabu_search::TabuSearchTSB, two_opt::TwoOpt,
     },
     models::{instance::Instance, path::Path},
 };
@@ -54,13 +51,12 @@ fn main() {
 
     let algorithm_selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Select an algorithm")
-        .item("Brute force TSP")
+        .item("Nearest Neighbor (Fast Greedy - Best for 33k+)")
         .item("Nearest insertion TSP")
         .item("Two opt TSP")
         .item("Simulated annealing TSP")
         .item("Tabu search TSP")
         .item("Lin-Kernighan TSP")
-        .item("TTP Optimizador (Greedy + 2-Opt)")
         .default(0)
         .interact()
         .expect("Failed to select an algorithm");
@@ -68,13 +64,14 @@ fn main() {
     let path = Path::new(instance.node_coords.clone());
     println!("Initial path length: {}", path.length());
     let mut shortest_path: Option<Path> = None;
-    let mut is_ttp_optimized = false;
+    // Always optimize for TTP
+    let is_ttp_optimized = true;
 
     // Default TSP step for initial tour
     match algorithm_selection {
         0 => {
-            println!("Brute force TSP");
-            shortest_path = Some(BruteForceTSP::solve(&path));
+            println!("Nearest Neighbor TSP (Scalable)");
+            shortest_path = Some(NearestNeighborTSP::solve(&path));
         }
         1 => {
             println!("Nearest insertion TSP");
@@ -96,14 +93,6 @@ fn main() {
             println!("Lin-Kernighan TSP");
             shortest_path = Some(LinKernighanTSP::solve(&path));
         }
-        6 => {
-            // TTP Optimizer flow
-            // 1. Initial TSP (use 2-opt as fast baseline)
-            println!("--- TTP Optimizador ---");
-            println!("1. Generando ruta inicial (TSP 2-opt)...");
-            shortest_path = Some(TwoOpt::solve(&path));
-            is_ttp_optimized = true;
-        }
         _ => println!("Invalid selection"),
     }
 
@@ -121,19 +110,12 @@ fn main() {
             }
         }
 
-        let packing_plan: Vec<usize>;
-
-        if is_ttp_optimized {
-            println!("2. Generando Plan de Recolección (Greedy Cost-Aware)...");
-            // Use new GreedyKP with tour
-            packing_plan = ttp::algorithms::kp::greedy::GreedyKP::solve(&instance, &tour);
-        } else {
-            // Fallback for classic TSP modes -> RandomKP as before
-            packing_plan = RandomKP::solve(&shortest_path_val, &instance);
-        }
+        // Always use GreedyKP for TTP
+        println!("2. Generando Plan de Recolección (Greedy Cost-Aware)...");
+        let packing_plan = ttp::algorithms::kp::greedy::GreedyKP::solve(&instance, &tour);
 
         let mut solution_tour = tour.clone();
-        let mut final_packing_plan = packing_plan.clone();
+        let final_packing_plan = packing_plan.clone();
 
         // CRITICAL FIX: TTP Simulation MUST start at Depot (Node 0/1).
         // Rotate solution_tour so it starts with 0 BEFORE optimization.
@@ -143,7 +125,9 @@ fn main() {
         }
 
         if is_ttp_optimized {
-            println!("3. Optimizando ruta TTP (Hill Climbing & Bit-Flip)...");
+            println!("3. TTP Optimization Skipped (Manual Impover Mode). Saving base solution...");
+            /*
+            println!("3. Optimizando ruta TTP (Hill Climbing & Bit-Flip & ItemSwap)...");
             let (opt_tour, opt_packing) =
                 ttp::algorithms::ttp::hill_climbing::HillClimbingTTP::optimize_full(
                     &instance,
@@ -152,6 +136,7 @@ fn main() {
                 );
             solution_tour = opt_tour;
             final_packing_plan = opt_packing;
+            */
         }
 
         // Rotation already done before.

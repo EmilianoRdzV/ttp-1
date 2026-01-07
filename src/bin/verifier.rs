@@ -4,8 +4,8 @@ use ttp::models::solution::Solution;
 
 fn main() {
     // Hardcoded paths for verification
-    let instance_path = "instances/a280_n279_bounded-strongly-corr_01.ttp";
-    let solution_path = "a280-TTP_279_sol_10.txt";
+    let instance_path = "instances/fnl4461_n4460_bounded-strongly-corr_01.ttp";
+    let solution_path = "fnl4461-TTP_4460_sol_2.txt";
 
     println!("--- TTP Verifier ---");
     println!("Instance: {}", instance_path);
