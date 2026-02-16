@@ -92,7 +92,7 @@ impl Solution {
                 .join(",")
         );
 
-        format!("{}\n{}\n", tour_str, pack_str)
+        format!("{}\n{}\n[{:.9}]", tour_str, pack_str, self.computation_time)
     }
 
     #[allow(dead_code)]

@@ -4,6 +4,7 @@
 
 use dialoguer::{theme::ColorfulTheme, Select};
 use std::fs;
+use std::time::Instant;
 use ttp::{
     algorithms::tsp::{
         lin_kernighan::LinKernighanTSP, nearest_insertion::NearestInsertionTSP,
@@ -66,6 +67,9 @@ fn main() {
     let mut shortest_path: Option<Path> = None;
     // Always optimize for TTP
     let is_ttp_optimized = true;
+
+    // Start timer for total execution (TSP + Packing + TTP Opt if any)
+    let start_time = Instant::now();
 
     // Default TSP step for initial tour
     match algorithm_selection {
@@ -147,27 +151,41 @@ fn main() {
             &solution_tour,
             &final_packing_plan,
         );
+        let duration = start_time.elapsed();
         // println!("TTP Solution:\n{}", solution);
 
-        // Find next available file name: [instance_name]_[nItems]_sol_[N].txt
+        // Find next available file name: [instance_name]_[nItems]_[profit].txt
         let base_name = instance.problem_name.clone();
         let n_items = instance.num_items;
-        let mut counter = 1;
-        let mut file_path = format!("{}_{}_sol_{}.txt", base_name, n_items, counter);
-        while std::path::Path::new(&file_path).exists() {
-            counter += 1;
-            file_path = format!("{}_{}_sol_{}.txt", base_name, n_items, counter);
-        }
+
+        // Profit is the objective value (ob)
+        let profit_val = solution.ob;
+        // Format to 9 decimals as requested implicitly by solution.rs change? Or just "ganancia".
+        // User said "sustituye sol_3 por la ganancia".
+        // Let's use 6 decimals for filename to be safe/clean?
+        // Or matching the user's request: "sustituye sol_3 por la ganancia resultante".
+        // Let's use a standard format for floating point in filename.
+        let profit_str = format!("{:.6}", profit_val);
+
+        let file_path = format!("{}_{}_{}.txt", base_name, n_items, profit_str);
+
+        // Update solution time before writing
+        let mut final_solution = solution.clone();
+        final_solution.computation_time = duration.as_secs_f64();
 
         // Write result to file
-        solution.write_result(&file_path);
+        final_solution.write_result(&file_path);
 
         println!("Solution written to: {}", file_path);
         println!("--------------------------------------------------");
         println!("TTP Result:");
-        println!("Objective (Ganancia Final): {:.4}", solution.ob);
-        println!("Total Profit (Valor Total): {:.4}", solution.fp);
-        println!("Total Time (Tiempo Total) : {:.4}", solution.ft);
+        println!("Objective (Ganancia Final): {:.4}", final_solution.ob);
+        println!("Total Profit (Valor Total): {:.4}", final_solution.fp);
+        println!("Total Time (Tiempo Total) : {:.4}", final_solution.ft);
+        println!(
+            "Execution Time (Tiempo Ejec): {:.9}s",
+            final_solution.computation_time
+        );
         println!("--------------------------------------------------");
     } else {
         println!("Failed to find the shortest path");

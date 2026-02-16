@@ -1,4 +1,5 @@
 use std::fs;
+use std::time::Instant;
 use ttp::algorithms::ttp::hill_climbing::HillClimbingTTP;
 use ttp::models::instance::Instance;
 use ttp::models::solution::Solution;
@@ -8,18 +9,15 @@ fn main() {
 
     // Hardcoded paths (User preference)
     // Adjust these to target the file you want to improve
-    let instance_path = "instances/fnl4461_n4460_bounded-strongly-corr_01.ttp";
-    let input_solution_path = "fnl4461-TTP_4460_sol_2.txt"; // The solution to improve
+    let instance_path = "instances/a280_n279_bounded-strongly-corr_01.ttp";
+    let input_solution_path = "a280-TTP_279_sol_2.txt"; // The solution to improve
 
-    // Generate output filename based on input
-    let output_solution_path = format!(
-        "{}_improved.txt",
-        input_solution_path.trim_end_matches(".txt")
-    );
+    // Original filename: instance-TTP_items_sol_X.txt
+    // Goal: instance-TTP_items_PROFIT.txt
+    // We will construct the output path AFTER optimization.
 
     println!("Instance: {}", instance_path);
     println!("Input Solution: {}", input_solution_path);
-    println!("Output Target: {}", output_solution_path);
 
     // 1. Load Instance
     let instance = Instance::load(instance_path).expect("Failed to load instance");
@@ -78,12 +76,32 @@ fn main() {
 
     // 5. Run Optimization
     println!("Starting Optimization (Hill Climbing + Swap + BitFlip + ItemSwap)...");
+    let start_time = Instant::now();
     let (new_tour, new_packing) =
         HillClimbingTTP::optimize_full(&instance, tour_0based, packing_mask);
+    let duration = start_time.elapsed();
 
     // 6. Evaluate and Save Result
-    let final_sol = Solution::evaluate(&instance, &new_tour, &new_packing);
+    let mut final_sol = Solution::evaluate(&instance, &new_tour, &new_packing);
+    final_sol.computation_time = duration.as_secs_f64();
     println!("Final Objective: {:.4}", final_sol.ob);
+    println!("Time: {:.3}s", final_sol.computation_time);
+
+    // Generate output filename based on profit (rounded to nearest int or similar)
+    // Replace "_sol_X.txt" with "_PROFIT.txt"
+    // Assuming format: ..._sol_X.txt
+    // If not matching pattern, just append profit.
+
+    let base_name = if let Some(idx) = input_solution_path.rfind("_sol_") {
+        &input_solution_path[..idx]
+    } else {
+        input_solution_path.trim_end_matches(".txt")
+    };
+
+    // Profit often negative in TTP or positive? It's usually "Ganancia" => Profit - Rent. Can be any f64.
+    // User wants "ganancia en el nombre".
+    let profit_str = format!("{:.6}", final_sol.ob); // Using 6 decimals as requested or standard
+    let output_solution_path = format!("{}_{}.txt", base_name, profit_str);
 
     final_sol.write_result(&output_solution_path);
     println!("Saved improved solution to: {}", output_solution_path);
