@@ -10,7 +10,7 @@ fn main() {
     // Hardcoded paths (User preference)
     // Adjust these to target the file you want to improve
     let instance_path = "instances/a280_n279_bounded-strongly-corr_01.ttp";
-    let input_solution_path = "a280-TTP_279_sol_2.txt"; // The solution to improve
+    let input_solution_path = "a280-TTP_279_-10516.546711.txt"; // The solution to improve
 
     // Original filename: instance-TTP_items_sol_X.txt
     // Goal: instance-TTP_items_PROFIT.txt
