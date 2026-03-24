@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2024 Filippo Finke and Walter Sostene Losa
- */
 
 use rand::{thread_rng, Rng};
 use std::f64;
@@ -9,15 +6,12 @@ use crate::models::path::Path;
 
 pub struct SimulatedAnnealingTSP;
 
-/**
- * Simulated annealing algorithm for the TSP problem.
- */
 impl SimulatedAnnealingTSP {
     pub fn solve(path: &Path) -> Path {
         let mut rng = thread_rng();
         let mut current_solution = path.clone();
         let mut temperature = 1000.0;
-        let cooling_rate = 0.0003;
+        let cooling_rate = 0.999;
         let mut best_solution = current_solution.clone();
 
         while temperature > 1.0 {
